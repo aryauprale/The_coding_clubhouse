@@ -1,16 +1,16 @@
 const LEVELS = [
   {
     title: "Stack 3 bricks in order: red on bottom, blue in middle, yellow on top.",
-    goal: "Build a tower: red → blue → yellow (bottom to top). Order matters — just like instructions to a computer!",
-    target: ['red','blue','yellow'],
+    goal: "Build a tower: red on bottom → blue in middle → yellow on top. Order matters — just like instructions to a computer!",
+    target: ['red','blue','yellow'],   // index 0 = bottom brick
     maxBlocks: 6,
     emoji: '🟥',
     successMsg: "Your stack matched perfectly! You just gave a computer its first instructions.",
     colors: ['red','blue','yellow']
   },
   {
-    title: "Stack 4 bricks: green, red, yellow, blue (bottom to top). Watch your order!",
-    goal: "4 bricks now! green → red → yellow → blue. One wrong order and the tower won't match. Computers are the same.",
+    title: "Stack 4 bricks: green on bottom, then red, yellow, blue on top.",
+    goal: "4 bricks now! green → red → yellow → blue (bottom to top). One wrong order and the tower won't match — computers are exactly the same.",
     target: ['green','red','yellow','blue'],
     maxBlocks: 8,
     emoji: '🟩',
@@ -19,7 +19,7 @@ const LEVELS = [
   },
   {
     title: "A pattern repeats! Build: red, blue, red, blue (bottom to top).",
-    goal: "Can you spot the pattern? red → blue → red → blue. In coding this is called a sequence with repetition!",
+    goal: "Can you spot the pattern? red → blue → red → blue (bottom to top). In coding this is called a sequence with repetition!",
     target: ['red','blue','red','blue'],
     maxBlocks: 8,
     emoji: '🔴',
@@ -27,7 +27,7 @@ const LEVELS = [
     colors: ['red','blue','yellow','green']
   },
   {
-    title: "Free builder! Create any stack of 5 bricks, then describe it to a friend. Can they rebuild it from your words?",
+    title: "Free builder! Create any stack of 5 bricks, then describe it to a friend.",
     goal: "Your mission: build ANY stack of 5 bricks. Then describe it step-by-step to your partner. If they can rebuild it exactly — you both win!",
     target: null,
     maxBlocks: 10,
@@ -45,7 +45,7 @@ function loadLevel(idx) {
   currentLevel = idx;
   const lvl = LEVELS[idx];
 
-  document.querySelectorAll('.level-btn').forEach((b, i) => {
+  document.querySelectorAll('.levels .level-btn').forEach((b, i) => {
     b.classList.toggle('active', i === idx);
   });
 
@@ -56,6 +56,7 @@ function loadLevel(idx) {
 
   if (workspace) {
     workspace.dispose();
+    workspace = null;
   }
 
   workspace = Blockly.inject('blocklyDiv', {
@@ -87,24 +88,32 @@ function loadLevel(idx) {
     }
   });
 
+  disableFlyoutAutoClose(workspace);
+
+  workspace.addChangeListener(() => {
+    const current = extractStack();
+    if (!lvl.target) {
+      renderTargetStack(current);
+      renderMyStack(current, null);
+    } else {
+      renderMyStack(current, lvl.target);
+    }
+    const counter = document.getElementById('block-count');
+    if (counter) counter.textContent = String(workspace.getAllBlocks(false).length);
+  });
+
   const areaLabel = document.querySelector('.area-label');
   const targetLabel = document.querySelector('.stack-col:first-child .col-label');
   const outputLabel = document.querySelector('.stack-col:last-child .col-label');
 
   if (!lvl.target) {
-    areaLabel.textContent = '🧱 Your design — build any stack of 5 bricks';
-    if (targetLabel) targetLabel.innerHTML = 'Your<br>design';
-    if (outputLabel) outputLabel.innerHTML = 'Your<br>output';
-
-    workspace.addChangeListener(() => {
-      const design = extractStack();
-      renderTargetStack(design);
-      renderMyStack(design, null);
-    });
+    if (areaLabel)   areaLabel.textContent  = '🧱 Your design — build any stack of 5 bricks';
+    if (targetLabel) targetLabel.innerHTML  = 'Your<br>design';
+    if (outputLabel) outputLabel.innerHTML  = 'Your<br>output';
   } else {
-    areaLabel.textContent = '🧱 Target stack → Your stack';
-    if (targetLabel) targetLabel.innerHTML = 'Target<br>(match this!)';
-    if (outputLabel) outputLabel.innerHTML = 'Your<br>output';
+    if (areaLabel)   areaLabel.textContent  = '🧱 Target stack → Your stack';
+    if (targetLabel) targetLabel.innerHTML  = 'Target<br>(match this!)';
+    if (outputLabel) outputLabel.innerHTML  = 'Your<br>output';
   }
 
   renderTargetStack(lvl.target);
@@ -126,7 +135,7 @@ function runCode() {
     renderMyStack(stack, null);
 
     if (stack.length < 5) {
-      showFeedback('info', `You have ${stack.length} brick${stack.length > 1 ? 's' : ''} — need 5 to complete this level. Keep adding!`);
+      showFeedback('info', `You have ${stack.length} brick${stack.length !== 1 ? 's' : ''} — need 5 to complete this level. Keep adding!`);
     } else {
       setTimeout(() => showCelebration(currentLevel, lvl), 600);
     }
@@ -144,17 +153,17 @@ function runCode() {
     updateProgress();
     setTimeout(() => showCelebration(currentLevel, lvl), 700);
   } else if (stack.length < lvl.target.length) {
-    showFeedback('error', `Not quite! Your stack has ${stack.length} brick${stack.length > 1 ? 's' : ''} but needs ${lvl.target.length}. Check for red bricks — those are wrong. Keep trying!`);
+    showFeedback('error', `Not quite! Your stack has ${stack.length} brick${stack.length !== 1 ? 's' : ''} but needs ${lvl.target.length}. Check for red-outlined bricks — those are wrong. Keep trying!`);
   } else if (stack.length > lvl.target.length) {
     showFeedback('error', `Too many bricks! Your stack has ${stack.length}, the target has ${lvl.target.length}. Remove some and try again.`);
   } else {
     const wrongs = stack.filter((c, i) => c !== lvl.target[i]).length;
-    showFeedback('error', `Almost! ${wrongs} brick${wrongs > 1 ? 's are' : ' is'} in the wrong position (shown in red). Check the target and try again!`);
+    showFeedback('error', `Almost! ${wrongs} brick${wrongs !== 1 ? 's are' : ' is'} in the wrong position (shown in red). Check the target and try again!`);
   }
 }
 
 function clearStack() {
-  workspace.clear();
+  if (workspace) workspace.clear();
   const lvl = LEVELS[currentLevel];
   renderTargetStack(lvl.target || []);
   renderMyStack([], lvl.target);

@@ -1,156 +1,168 @@
-const COLORS_MAP = {
-  red: '#e63946',
-  blue: '#457b9d',
-  yellow: '#f4d35e',
-  green: '#2d6a4f',
-  orange: '#f77f00',
-  purple: '#7b2d8b',
-  pink: '#e07a96',
-  white: '#e9ecef'
-};
+/* ============================================================
+   sandbox.js  –  shared utilities for ALL activities
+   ============================================================ */
 
-function rgbToHue(hex) {
-  const r = parseInt(hex.slice(1,3),16)/255;
-  const g = parseInt(hex.slice(3,5),16)/255;
-  const b = parseInt(hex.slice(5,7),16)/255;
-  const max = Math.max(r,g,b), min = Math.min(r,g,b);
-  let h = 0;
-  if (max !== min) {
-    const d = max - min;
-    switch (max) {
-      case r: h = ((g-b)/d + (g < b ? 6 : 0)) * 60; break;
-      case g: h = ((b-r)/d + 2) * 60; break;
-      case b: h = ((r-g)/d + 4) * 60; break;
-    }
-  }
-  return Math.round(h);
-}
-
-function shadeColor(hex, pct) {
-  const num = parseInt(hex.replace('#',''),16);
-  const r = Math.min(255, Math.max(0, (num >> 16) + pct));
-  const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + pct));
-  const b = Math.min(255, Math.max(0, (num & 0xff) + pct));
-  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-}
-
+/* ---------- block registration ---------- */
 function registerBlocks(colors) {
   colors.forEach(color => {
-    const blockType = 'place_' + color + '_brick';
-    if (Blockly.Blocks[blockType]) return;
+    const blockName = `brick_${color}`;
+    if (Blockly.Blocks[blockName]) return;
 
-    const displayColor = COLORS_MAP[color];
-    Blockly.Blocks[blockType] = {
-      init: function() {
-        this.appendDummyInput()
-          .appendField('🧱 place')
-          .appendField(new Blockly.FieldLabel(color.toUpperCase()))
-          .appendField('brick');
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(rgbToHue(displayColor));
-        this.setTooltip('Place a ' + color + ' brick on your stack');
-        this.setHelpUrl('');
+    const hex = {
+      red: '#e74c3c', blue: '#3498db', yellow: '#f1c40f',
+      green: '#2ecc71', orange: '#e67e22', purple: '#9b59b6',
+      pink: '#ff69b4', white: '#ecf0f1'
+    }[color] || '#aaa';
+
+    Blockly.Blocks[blockName] = {
+      init() {
+        this.appendDummyInput().appendField(`🧱 ${color.toUpperCase()} brick`);
+        this.setPreviousStatement(true, 'Brick');
+        this.setNextStatement(true, 'Brick');
+        this.setColour(hex);
+        this.setTooltip(`A ${color} brick`);
       }
     };
   });
 }
 
+/* ---------- toolbox ---------- */
 function buildToolbox(colors) {
-  const items = colors.map(c => `<block type="place_${c}_brick"></block>`).join('\n');
-  return `<xml id="toolbox"><category name="🧱 Bricks" colour="#e94560">${items}</category></xml>`;
+  const blocks = colors.map(c =>
+    `<block type="brick_${c}"></block>`
+  ).join('');
+  return `<xml xmlns="https://developers.google.com/blockly/xml">
+    <category name="🧱 Bricks" colour="#e94560">
+      ${blocks}
+    </category>
+  </xml>`;
 }
 
-function renderBrick(color, state = '') {
+/* ---------- stack extraction ----------
+   Returns colors top→bottom as they appear stacked visually.
+   Blockly chain goes topBlock→next→next (top of stack first).
+   Target arrays in LEVELS are defined bottom→top ['red','blue','yellow']
+   meaning red is at the bottom, yellow at the top.
+   extractStack() returns top→bottom order to match visual rendering.
+----------------------------------------------------------------------- */
+function extractStack() {
+  const topBlocks = workspace.getTopBlocks(true);
+  if (!topBlocks.length) return [];
+  const stack = [];
+  let block = topBlocks[0];
+  while (block) {
+    stack.push(block.type.replace('brick_', ''));
+    block = block.getNextBlock();
+  }
+  // stack is now top-of-tower → bottom-of-tower (Blockly order)
+  // reverse so index 0 = bottom brick, matching LEVELS target arrays
+  return stack.reverse();
+}
+
+/* ---------- rendering helpers ---------- */
+const COLOR_MAP = {
+  red:'#e74c3c', blue:'#3498db', yellow:'#f1c40f',
+  green:'#2ecc71', orange:'#e67e22', purple:'#9b59b6',
+  pink:'#ff69b4', white:'#ecf0f1'
+};
+
+function makeBrick(color, highlight) {
+  const hex = COLOR_MAP[color] || '#aaa';
   const div = document.createElement('div');
-  div.className = 'lego-brick ' + color + (state ? ' ' + state : '');
+  div.className = 'brick';
+  if (highlight === 'wrong') div.classList.add('wrong');
+  if (highlight === 'ok')    div.classList.add('ok');
+  div.style.background = hex;
+  div.style.color = (color === 'yellow' || color === 'white') ? '#333' : '#fff';
   div.textContent = color.toUpperCase();
   return div;
 }
 
-function renderTargetStack(colors) {
+/* Render a stack where index 0 = bottom brick.
+   We reverse before appending so bottom brick appears at bottom of div. */
+function renderTargetStack(target) {
   const el = document.getElementById('target-stack');
+  if (!el) return;
   el.innerHTML = '';
-  if (!colors || colors.length === 0) {
-    const ghost = renderBrick('white', 'ghost');
-    ghost.textContent = 'YOUR DESIGN';
-    el.appendChild(ghost);
+  if (!target || !target.length) {
+    el.innerHTML = '<div class="empty-hint">Nothing yet — build your stack!</div>';
     return;
   }
-  colors.forEach(c => el.appendChild(renderBrick(c)));
+  // target[0] = bottom brick → render reversed so bottom appears at bottom
+  [...target].reverse().forEach(c => el.appendChild(makeBrick(c)));
 }
 
-function renderMyStack(colors, targetColors) {
+/* stack param: index 0 = bottom brick (matches target convention) */
+function renderMyStack(stack, target) {
   const el = document.getElementById('my-stack');
+  if (!el) return;
   el.innerHTML = '';
-  if (!colors.length) {
-    const ghost = renderBrick('white', 'ghost');
-    ghost.textContent = 'RUN CODE';
-    el.appendChild(ghost);
+  if (!stack.length) {
+    el.innerHTML = '<div class="empty-hint">Drag bricks from the toolbox →</div>';
     return;
   }
-  colors.forEach((c, i) => {
-    const correct = !targetColors || targetColors[i] === c;
-    const state = targetColors ? (correct ? 'correct' : 'wrong') : '';
-    el.appendChild(renderBrick(c, state));
+  // render reversed so index-0 (bottom) appears at bottom of div
+  [...stack].reverse().forEach((c, reversedIdx) => {
+    const originalIdx = stack.length - 1 - reversedIdx; // index in original array
+    let hl = null;
+    if (target) {
+      hl = (target[originalIdx] === c) ? 'ok' : 'wrong';
+    }
+    el.appendChild(makeBrick(c, hl));
   });
 }
 
-function extractStack() {
-  const stack = [];
-  const topBlocks = workspace.getTopBlocks(true);
-  let block = topBlocks.length ? topBlocks[0] : null;
-  while (block) {
-    const type = block.type;
-    if (type.startsWith('place_') && type.endsWith('_brick')) {
-      const color = type.replace('place_','').replace('_brick','');
-      stack.push(color);
-    }
-    block = block.getNextBlock ? block.getNextBlock() : null;
-  }
-  return stack.reverse();
+/* ---------- flyout auto-close fix ---------- */
+function disableFlyoutAutoClose(ws) {
+  // Try both the direct flyout and the toolbox flyout
+  const tryFlyout = (flyout) => {
+    if (!flyout) return;
+    if (typeof flyout.setAutoClose === 'function') flyout.setAutoClose(false);
+    // Blockly internals fallback
+    if (flyout.autoClose !== undefined) flyout.autoClose = false;
+  };
+  try { tryFlyout(ws.getFlyout && ws.getFlyout()); } catch(e) {}
+  try { tryFlyout(ws.getToolbox && ws.getToolbox() && ws.getToolbox().getFlyout && ws.getToolbox().getFlyout()); } catch(e) {}
 }
 
+/* ---------- feedback ---------- */
 function showFeedback(type, msg) {
   const el = document.getElementById('feedback');
-  el.className = 'feedback ' + type;
+  if (!el) return;
+  el.className = `feedback ${type}`;
   el.textContent = msg;
+  el.style.display = 'block';
 }
-
 function hideFeedback() {
   const el = document.getElementById('feedback');
-  el.className = 'feedback';
-  el.textContent = '';
+  if (el) { el.style.display = 'none'; el.textContent = ''; }
 }
 
+/* ---------- progress ---------- */
 function updateProgress() {
-  const n = completedLevels.size;
-  document.getElementById('progress-text').textContent = n + ' / 4';
-  document.getElementById('progress-fill').style.width = (n / 4 * 100) + '%';
+  const fill = document.getElementById('progress-fill');
+  const text = document.getElementById('progress-text');
+  if (!fill || !text) return;
+  const pct = Math.round((completedLevels.size / LEVELS.length) * 100);
+  fill.style.width = pct + '%';
+  text.textContent = `${completedLevels.size} / ${LEVELS.length} levels complete`;
 }
 
-function showCelebration(idx, lvl) {
-  document.getElementById('celeb-emoji').textContent = lvl.emoji + ' 🎉';
-  document.getElementById('celeb-title').textContent = 'Level ' + (idx + 1) + ' Complete!';
-  document.getElementById('celeb-msg').textContent = lvl.successMsg;
-  const nextBtn = document.querySelector('#celebration .btn-next');
-  if (idx >= LEVELS.length - 1) {
-    nextBtn.textContent = '🏅 Finish!';
-    nextBtn.onclick = () => {
-      document.getElementById('celeb-title').textContent = 'All Levels Done!';
-      document.getElementById('celeb-emoji').textContent = '🏅';
-      document.getElementById('celeb-msg').textContent = 'You completed all 4 levels. You are an Instruction Explorer!';
-      nextBtn.style.display = 'none';
-    };
-  } else {
-    nextBtn.textContent = 'Next Level →';
-    nextBtn.onclick = nextLevel;
-  }
-  document.getElementById('celebration').classList.add('show');
+/* ---------- celebration ---------- */
+function showCelebration(levelIdx, lvl) {
+  const overlay = document.getElementById('celebration-overlay');
+  const msg     = document.getElementById('celebration-msg');
+  const sub     = document.getElementById('celebration-sub');
+  if (!overlay) return;
+  msg.textContent = lvl.successMsg;
+  sub.textContent = levelIdx < LEVELS.length - 1
+    ? `Level ${levelIdx + 1} complete! Ready for level ${levelIdx + 2}?`
+    : '🎉 You completed all levels!';
+  overlay.style.display = 'flex';
 }
 
-function nextLevel() {
-  document.getElementById('celebration').classList.remove('show');
-  const next = Math.min(currentLevel + 1, LEVELS.length - 1);
-  loadLevel(next);
+function closeCelebration() {
+  const overlay = document.getElementById('celebration-overlay');
+  if (overlay) overlay.style.display = 'none';
+  if (currentLevel < LEVELS.length - 1) loadLevel(currentLevel + 1);
 }

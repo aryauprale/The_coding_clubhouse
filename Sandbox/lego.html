@@ -15,6 +15,10 @@
   </a>
   <div class="day-tag">Virtual Lego</div>
   <div class="mission">🧱 Stack Builder — What Is Coding?</div>
+  <div class="activity-switch" style="margin-left:12px; display:flex; gap:6px;">
+    <button id="activity-stack" class="level-btn active" onclick="switchActivity('stack')">Stack</button>
+    <button id="activity-loop" class="level-btn" onclick="switchActivity('loop')">Loop Builder</button>
+  </div>
 </header>
 
 <div class="main">
@@ -56,8 +60,11 @@
     <hr class="divider">
 
     <div class="controls">
-      <button class="btn btn-run" onclick="runCode()">▶ Run Stack</button>
-      <button class="btn btn-clear" onclick="clearStack()">↺ Clear</button>
+      <button class="btn btn-run" onclick="runActivity()">▶ Run</button>
+      <button class="btn btn-clear" onclick="clearActivity()">↺ Clear</button>
+      <div id="block-counter" style="min-width:120px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#aaa;">
+        Blocks: <span id="block-count" style="margin-left:8px; color:#f4d35e;">0</span>
+      </div>
     </div>
 
     <div class="feedback" id="feedback"></div>
@@ -2578,5 +2585,6 @@ return module$build$src$blocks$blocks;
 
 <script src="sandbox.js"></script>
 <script src="activities/lego.js"></script>
+<script src="activities/loop-builder.js"></script>
 </body>
 </html>
