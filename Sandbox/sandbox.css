@@ -626,3 +626,67 @@ header {
   #right-panel, .stack-panel, .stage-panel { width: 100%; border-left: none; border-top: 2px solid #0f3460; }
   #blocklyDiv, .blockly-area { min-height: 280px; }
 }
+
+/* ============================================================
+   STAGE ENGINE styles (Days 3, 4, 5)
+   ============================================================ */
+.stage-screen {
+  background: #1a1a2e;
+  border: 2px solid #0f3460;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.bg-city   { background: linear-gradient(180deg, #1a1a2e 60%, #2d3561 100%); }
+.bg-forest { background: linear-gradient(180deg, #1a4731 60%, #2d6a4f 100%); }
+.bg-space  { background: linear-gradient(180deg, #000010 60%, #0f0f3d 100%); }
+.bg-beach  { background: linear-gradient(180deg, #87ceeb 50%, #f4d35e 100%); }
+.bg-home   { background: linear-gradient(180deg, #e8d5b7 60%, #c9b99a 100%); }
+
+.key-btn {
+  background: #0f3460;
+  border: 2px solid #3498db;
+  color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.key-btn:hover  { background: #3498db; }
+.key-btn.active { background: #3498db; transform: scale(0.95); }
+.key-btn.locked { opacity: 0.35; cursor: not-allowed; }
+
+.hidden { display: none !important; }
+
+/* Traffic light bulbs (Day 3) */
+.bulb {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #1a1a2e;
+  border: 3px solid #0f3460;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.bulb[data-color="red"]    { background: #3a1a1a; border-color: #e74c3c; }
+.bulb[data-color="yellow"] { background: #3a3a1a; border-color: #f1c40f; }
+.bulb[data-color="green"]  { background: #1a3a1a; border-color: #2ecc71; }
+.bulb[data-color="orange"] { background: #3a2a1a; border-color: #e67e22; }
+.bulb[data-color="pink"]   { background: #3a1a2a; border-color: #ff69b4; }
+.bulb.on[data-color="red"]    { background: #e74c3c; box-shadow: 0 0 16px #e74c3c; }
+.bulb.on[data-color="yellow"] { background: #f1c40f; box-shadow: 0 0 16px #f1c40f; }
+.bulb.on[data-color="green"]  { background: #2ecc71; box-shadow: 0 0 16px #2ecc71; }
+.bulb.on[data-color="orange"] { background: #e67e22; box-shadow: 0 0 16px #e67e22; }
+.bulb.on[data-color="pink"]   { background: #ff69b4; box-shadow: 0 0 16px #ff69b4; }
+.bulb.locked { opacity: 0.2; cursor: not-allowed; pointer-events: none; }
+
+/* Mini bricks in Day 5 brick preview */
+.mini-brick {
+  width: 20px;
+  height: 12px;
+  border-radius: 2px;
+  display: inline-block;
+}
