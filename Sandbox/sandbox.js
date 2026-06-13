@@ -112,6 +112,26 @@ function renderMyStack(stack, target) {
   });
 }
 
+/* ---------- Blockly theme ---------- */
+function getSandboxTheme() {
+  return Blockly.Themes.Dark || Blockly.Theme.defineTheme('sandbox-dark', {
+    base: Blockly.Themes.Classic,
+    componentStyles: {
+      workspaceBackgroundColour: '#1a1a2e',
+      toolboxBackgroundColour: '#0f3460',
+      toolboxForegroundColour: '#ffffff',
+      flyoutBackgroundColour: '#16213e',
+      flyoutForegroundColour: '#ffffff',
+      flyoutOpacity: 1,
+      scrollbarColour: '#e94560',
+      insertionMarkerColour: '#ffffff',
+      insertionMarkerOpacity: 0.35,
+      scrollbarOpacity: 0.55,
+      cursorColour: '#d0d0d0'
+    }
+  });
+}
+
 /* ---------- flyout auto-close fix ---------- */
 function disableFlyoutAutoClose(ws) {
   // Try both the direct flyout and the toolbox flyout

@@ -32,14 +32,20 @@ let loopWorkspace = null;
 let currentLoopLevel = 0;
 let loopCompleted = new Set();
 let currentActivity = 'stack'; // default
+const ACTIVITY_ALIAS = { ifthen: 'if' };
+
+function normalizeActivity(name) {
+  return ACTIVITY_ALIAS[name] || name;
+}
 
 function switchActivity(name) {
+  name = normalizeActivity(name);
   currentActivity = name;
   currentLevel = 0; // Reset to first level when switching activities
   
   document.getElementById('activity-stack').classList.toggle('active', name === 'stack');
   document.getElementById('activity-loop').classList.toggle('active', name === 'loop');
-  document.getElementById('activity-if').classList.toggle('active', name === 'if');
+  document.getElementById('activity-if').classList.toggle('active', name === 'if' || name === 'ifthen');
   document.getElementById('activity-anim').classList.toggle('active', name === 'anim');
   document.getElementById('activity-fp').classList.toggle('active', name === 'fp');
 
@@ -112,7 +118,7 @@ function runActivity() {
     if (typeof runCode === 'function') runCode();
   } else if (currentActivity === 'loop') {
     loopRun();
-  } else if (currentActivity === 'if') {
+  } else if (currentActivity === 'if' || currentActivity === 'ifthen') {
     if (typeof runIfCode === 'function') runIfCode();
   } else if (currentActivity === 'anim') {
     if (typeof runAnimCode === 'function') runAnimCode();
@@ -125,7 +131,7 @@ function clearActivity() {
     if (typeof clearStack === 'function') clearStack();
   } else if (currentActivity === 'loop') {
     loopClear();
-  } else if (currentActivity === 'if') {
+  } else if (currentActivity === 'if' || currentActivity === 'ifthen') {
     if (typeof clearIfCode === 'function') clearIfCode();
   } else if (currentActivity === 'anim') {
     if (typeof clearAnimCode === 'function') clearAnimCode();
@@ -256,6 +262,7 @@ function loadLoopLevel(idx) {
     toolbox: buildLoopToolbox(colors),
     scrollbars: true,
     trashcan: true,
+    theme: getSandboxTheme(),
     grid: { spacing: 20, length: 3, colour: 'rgba(255,255,255,0.05)', snap: true }
   });
 
@@ -386,7 +393,7 @@ function loadActivityLevel(idx) {
     if (typeof loadLevel === 'function') loadLevel(idx);
   } else if (currentActivity === 'loop') {
     if (typeof loadLoopLevel === 'function') loadLoopLevel(idx);
-  } else if (currentActivity === 'if') {
+  } else if (currentActivity === 'if' || currentActivity === 'ifthen') {
     if (typeof loadIfLevel === 'function') loadIfLevel(idx);
   } else if (currentActivity === 'anim') {
     if (typeof loadAnimLevel === 'function') loadAnimLevel(idx);

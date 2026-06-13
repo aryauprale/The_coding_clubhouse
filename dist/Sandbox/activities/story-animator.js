@@ -28,7 +28,7 @@ function loadAnimLevel(idx) {
   
   // Update main mission label with level-specific info
   const missionEl = document.querySelector('.mission');
-  if (missionEl) missionEl.textContent = `🎜 Story Animator — Level ${idx + 1}`;
+  if (missionEl) missionEl.textContent = `🎬 Story Animator — Level ${idx + 1}`;
   
   document.getElementById('goal-text').textContent = lvl.goal;
   hideFeedback();
@@ -54,6 +54,7 @@ function loadAnimLevel(idx) {
   animWorkspace = Blockly.inject('blocklyDiv', {
     toolbox: buildAnimToolbox(lvl.keys),
     scrollbars: true, trashcan: true,
+    theme: getSandboxTheme(),
     grid: { spacing: 20, length: 3, colour: 'rgba(255,255,255,0.05)', snap: true }
   });
 

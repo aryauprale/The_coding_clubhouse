@@ -262,6 +262,7 @@ function loadLoopLevel(idx) {
     toolbox: buildLoopToolbox(colors),
     scrollbars: true,
     trashcan: true,
+    theme: getSandboxTheme(),
     grid: { spacing: 20, length: 3, colour: 'rgba(255,255,255,0.05)', snap: true }
   });
 
