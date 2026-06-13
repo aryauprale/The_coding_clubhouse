@@ -68,6 +68,10 @@
 
     <!-- ── DAY 3 panel: traffic light ── -->
     <div id="panel-ifthen" class="activity-panel" style="padding:12px;">
+      <div class="goal-card" style="margin-bottom:12px;">
+        <div class="goal-title" id="if-title">If-Then Builder</div>
+        <div class="goal-text" id="if-goal">Build rules that respond to traffic-light colors.</div>
+      </div>
       <div id="traffic-light" style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:12px;"></div>
       <div style="background:#0f3460; border-radius:10px; padding:12px; text-align:center;">
         <div id="reaction-emoji" style="font-size:40px;">❓</div>
@@ -100,9 +104,10 @@
       </div>
       <div id="fp-stage-buttons" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:8px;"></div>
       <div style="background:#0f3460; border-radius:8px; padding:8px; font-size:11px; max-height:60px; overflow-y:auto;" id="fp-event-log"><p>Press Run then use the buttons!</p></div>
-      <div style="margin-top:6px; display:flex; gap:12px; align-items:center;">
+      <div style="margin-top:6px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <span id="fp-score-label" style="font-size:11px; font-weight:800; color:#f4d35e;">Score: 0 · Lives: 3</span>
         <span style="font-size:11px; font-weight:800; color:#7ec8e3;">Blocks: <span id="fp-block-count" style="color:#f4d35e;">0</span></span>
-        <div id="fp-brick-row" style="display:flex; gap:3px; flex-wrap:wrap;"></div>
+        <div id="fp-story-row" style="display:flex; gap:3px; flex-wrap:wrap; align-items:center;"></div>
       </div>
     </div>
 
@@ -2657,14 +2662,14 @@ return module$build$src$blocks$blocks;
           if (typeof currentActivity === 'undefined') return false;
           if (currentActivity === 'stack') return (typeof stackCompleted !== 'undefined') && stackCompleted.has(idx);
           if (currentActivity === 'loop')  return (typeof loopCompleted !== 'undefined') && loopCompleted.has(idx);
-          if (currentActivity === 'ifthen') return (typeof ifCompleted !== 'undefined') && ifCompleted.has(idx);
+          if (currentActivity === 'if' || currentActivity === 'ifthen') return (typeof ifCompleted !== 'undefined') && ifCompleted.has(idx);
           if (currentActivity === 'anim')  return (typeof animCompleted !== 'undefined') && animCompleted.has(idx);
           return false;
         },
         add(idx) {
           if (currentActivity === 'stack' && typeof stackCompleted !== 'undefined') stackCompleted.add(idx);
           if (currentActivity === 'loop' && typeof loopCompleted !== 'undefined') loopCompleted.add(idx);
-          if (currentActivity === 'ifthen' && typeof ifCompleted !== 'undefined') ifCompleted.add(idx);
+          if ((currentActivity === 'if' || currentActivity === 'ifthen') && typeof ifCompleted !== 'undefined') ifCompleted.add(idx);
           if (currentActivity === 'anim' && typeof animCompleted !== 'undefined') animCompleted.add(idx);
         },
         delete(idx) {
@@ -2682,7 +2687,7 @@ return module$build$src$blocks$blocks;
         get size() {
           if (currentActivity === 'stack') return stackCompleted ? stackCompleted.size : 0;
           if (currentActivity === 'loop')  return loopCompleted ? loopCompleted.size : 0;
-          if (currentActivity === 'ifthen') return ifCompleted ? ifCompleted.size : 0;
+          if (currentActivity === 'if' || currentActivity === 'ifthen') return ifCompleted ? ifCompleted.size : 0;
           if (currentActivity === 'anim')  return animCompleted ? animCompleted.size : 0;
           return 0;
         }

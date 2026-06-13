@@ -111,7 +111,6 @@ function seExecuteAction(action, key) {
       const step = 12;
       if (action.value === 'move_left') {
         seState.charX = Math.max(10, seState.charX - step);
-        if (char) { char.style.transform = 'scaleX(-1)'; setTimeout(() => char.style.transform = '', 400); }
         seLog(`◀ ${key}: moved left`);
       } else if (action.value === 'move_right') {
         seState.charX = Math.min(90, seState.charX + step);
@@ -195,25 +194,52 @@ function seHandleKeyPress(key) {
 /* ── Compile a Blockly workspace's event blocks into seEventMap ──
    Works with both 'anim_when_key' (Day 4) and 'fp_when_key' (Day 5)
    block type prefixes.                                              */
+function seCompileActions(block, prefix) {
+  const actions = [];
+  let b = block;
+  while (b) {
+    const t = b.type;
+    if (t === prefix + 'move') {
+      actions.push({ type:'move', value:b.getFieldValue('ACTION') });
+    } else if (t === prefix + 'say') {
+      actions.push({ type:'say', value:b.getFieldValue('MSG') });
+    } else if (t === prefix + 'costume') {
+      actions.push({ type:'costume', value:b.getFieldValue('IDX') });
+    } else if (t === prefix + 'background') {
+      actions.push({ type:'background', value:b.getFieldValue('IDX') });
+    } else if (t === prefix + 'sound') {
+      actions.push({ type:'sound', value:b.getFieldValue('SOUND') });
+    } else if (t === prefix + 'set_var') {
+      actions.push({ type:'set_var', name:b.getFieldValue('NAME'), value:b.getFieldValue('VALUE') });
+    } else if (t === prefix + 'change_var') {
+      actions.push({ type:'change_var', name:b.getFieldValue('NAME'), value:b.getFieldValue('VALUE') });
+    } else if (t === prefix + 'win') {
+      actions.push({ type:'win' });
+    } else if (t === prefix + 'lose') {
+      actions.push({ type:'lose' });
+    } else if (t === prefix + 'if_score') {
+      const nested = [];
+      let inner = b.getInputTargetBlock('DO');
+      while (inner) { nested.push(...seCompileActions(inner, prefix)); inner = inner.getNextBlock(); }
+      actions.push({ type:'if_score', name:b.getFieldValue('NAME'), op:b.getFieldValue('OP') || '>=', value:Number(b.getFieldValue('VALUE') || 0), actions:nested });
+    }
+    b = b.getNextBlock();
+  }
+  return actions;
+}
+
 function seCompileEvents(ws, blockPrefix) {
   const map = {};
   const prefix = blockPrefix || '';
-  // Scan all blocks so event blocks are found even if they're chained or not top-level.
   ws.getAllBlocks(false).forEach(block => {
-    if (block.type !== prefix + 'when_key') return;
-    const key     = block.getFieldValue('KEY');
-    const actions = [];
-    let b = block.getInputTargetBlock('DO');
-    while (b) {
-      const t = b.type;
-      if      (t === prefix + 'move')       actions.push({ type:'move',       value: b.getFieldValue('ACTION') });
-      else if (t === prefix + 'say')        actions.push({ type:'say',        value: b.getFieldValue('MSG')    });
-      else if (t === prefix + 'costume')    actions.push({ type:'costume',    value: b.getFieldValue('IDX')    });
-      else if (t === prefix + 'background') actions.push({ type:'background', value: b.getFieldValue('IDX')    });
-      else if (t === prefix + 'sound')      actions.push({ type:'sound',      value: b.getFieldValue('SOUND')  });
-      b = b.getNextBlock();
+    if (block.type === prefix + 'when_key') {
+      const key = block.getFieldValue('KEY');
+      const actions = seCompileActions(block.getInputTargetBlock('DO'), prefix);
+      if (actions.length) map[key] = actions;
+    } else if (block.type === prefix + 'when_start') {
+      const actions = seCompileActions(block.getInputTargetBlock('DO'), prefix);
+      if (actions.length) map.START = actions;
     }
-    if (actions.length) map[key] = actions;
   });
   return map;
 }

@@ -4,34 +4,35 @@
 
 const IF_LEVELS = [
   {
-    title: "Click a traffic light color and check what happens.",
-    goal: "Green means go, Red means stop. Watch the Blockly workspace for clues!",
-    successMsg: "You made your first condition! If color is green, then go.",
-    colors: ['red','green','blue']
+    title: "Click the red, yellow, and green lights and test each rule.",
+    goal: "Red means stop, yellow means slow, green means go. Watch the Blockly workspace for clues!",
+    successMsg: "You made your first condition! The traffic light now reacts to red, yellow, and green.",
+    colors: ['red','yellow','green']
   },
   {
-    title: "Make TWO conditions: if red → stop, if green → go",
+    title: "Make two rules: red → stop and green → go",
     goal: "Build with 2 separate if-then blocks in Blockly.",
     successMsg: "Two conditions working! You're thinking like a programmer.",
-    colors: ['red','green','blue']
+    colors: ['red','yellow','green']
   },
   {
-    title: "Add a third: if blue → caution (slow)",
-    goal: "Now handle all three colors: red=stop, green=go, blue=caution.",
+    title: "Add the third rule: yellow → slow down",
+    goal: "Now handle all three traffic-light colors: red=stop, yellow=slow, green=go.",
     successMsg: "All three colors handled! You mastered if-then logic.",
-    colors: ['red','green','blue']
+    colors: ['red','yellow','green']
   },
   {
-    title: "Free builder: Create any condition logic you want!",
-    goal: "Invent your own if-then rules with the traffic light.",
+    title: "Free builder: Add two extra colors to your story light!",
+    goal: "Invent your own if-then rules with the traffic light and two extra colors.",
     successMsg: "You're a programmer! You can create any logic now.",
-    colors: ['red','green','blue']
+    colors: ['red','yellow','green','orange','pink']
   }
 ];
 
 let ifCompleted = new Set();
 let ifWorkspace = null;
 let ifRules = {};
+let ifTestedRules = new Set();
 
 function buildIfToolbox(colors) {
   return `<xml xmlns="https://developers.google.com/blockly/xml">
@@ -69,9 +70,11 @@ function loadIfLevel(idx) {
 
   const titleEl = document.getElementById('if-title');
   const goalEl = document.getElementById('if-goal');
+  const sharedGoalEl = document.getElementById('goal-text');
   if (titleEl) titleEl.textContent = lvl.title;
   if (goalEl) goalEl.textContent = lvl.goal;
-  
+  if (sharedGoalEl) sharedGoalEl.textContent = lvl.goal;
+
   // Update main mission label with level-specific info
   const missionEl = document.querySelector('.mission');
   if (missionEl) missionEl.textContent = `🚦 If-Then Builder — ${lvl.title}`;
@@ -93,6 +96,7 @@ function loadIfLevel(idx) {
     toolbox: buildIfToolbox(lvl.colors),
     scrollbars: true,
     trashcan: true,
+    theme: getSandboxTheme(),
     grid: { spacing: 20, length: 3, colour: 'rgba(255,255,255,0.05)', snap: true }
   });
 
@@ -103,6 +107,7 @@ function loadIfLevel(idx) {
   });
 
   ifRules = {};
+  ifTestedRules = new Set();
   seResetReactionScreen();
   renderTrafficLight();
 }
@@ -187,10 +192,15 @@ function testLight(color) {
     return false;
   }
 
+  ifTestedRules.add(color);
+
   const reaction = SE_REACTIONS[selectedRule] || { emoji: '⚡', label: selectedRule, color: '#ffffff' };
   seShowReaction(reaction.emoji, reaction.label, `Rule fired: IF ${color.toUpperCase()} → ${selectedRule}`, reaction.color);
 
-  if (!ifCompleted.has(currentLevel)) {
+  const ruleColors = Object.keys(ifRules);
+  const testedAllRules = ruleColors.length > 0 && ruleColors.every(ruleColor => ifTestedRules.has(ruleColor));
+
+  if (testedAllRules && !ifCompleted.has(currentLevel)) {
     ifCompleted.add(currentLevel);
     if (typeof updateProgress === 'function') updateProgress();
     const lvl = IF_LEVELS[currentLevel];
@@ -205,6 +215,7 @@ function clearIfCode() {
     ifWorkspace.clear();
   }
   ifRules = {};
+  ifTestedRules = new Set();
   seIsRunning = false;
   seResetReactionScreen();
   hideFeedback();

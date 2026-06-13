@@ -77,22 +77,7 @@ function loadLevel(idx) {
     maxBlocks: lvl.maxBlocks,
     scrollbars: true,
     trashcan: true,
-    theme: Blockly.Themes.Dark || Blockly.Theme.defineTheme('dark', {
-      'base': Blockly.Themes.Classic,
-      'componentStyles': {
-        'workspaceBackgroundColour': '#1a1a2e',
-        'toolboxBackgroundColour': '#0f3460',
-        'toolboxForegroundColour': '#ffffff',
-        'flyoutBackgroundColour': '#16213e',
-        'flyoutForegroundColour': '#ffffff',
-        'flyoutOpacity': 1,
-        'scrollbarColour': '#e94560',
-        'insertionMarkerColour': '#fff',
-        'insertionMarkerOpacity': 0.3,
-        'scrollbarOpacity': 0.4,
-        'cursorColour': '#d0d0d0',
-      }
-    }),
+    theme: getSandboxTheme(),
     grid: {
       spacing: 20,
       length: 3,
